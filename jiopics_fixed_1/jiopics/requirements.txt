@@ -1,0 +1,9 @@
+flask==3.0.3
+flask-cors==4.0.1
+Pillow==10.4.0
+numpy==1.26.4
+
+# Optional — for U²-Net AI saliency (better accuracy)
+ torch==2.3.0
+torchvision==0.18.0
+facenet-pytorch==2.6.0

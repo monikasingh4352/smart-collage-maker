@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>JIOPICS — AI Collage Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════════════════
+   TOKENS
+══════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  /* Core palette */
+  --bg:        #07070E;
+  --surface-1: #0D0D17;
+  --surface-2: #13131F;
+  --surface-3: #1A1A28;
+  --border:    rgba(255,255,255,.06);
+  --border-hi: rgba(255,255,255,.12);
+
+  /* Brand */
+  --brand:     #FF4D1A;
+  --brand-2:   #FF1A6E;
+  --accent:    #6C3FDB;
+  --teal:      #00C9A7;
+  --gold:      #F0A500;
+
+  /* Text */
+  --text-1:  #F0F0F8;
+  --text-2:  #9090A8;
+  --text-3:  #50506A;
+
+  /* Dimensions */
+  --topbar:  56px;
+  --sidebar: 272px;
+  --bar:     66px;
+  --r-sm:    8px;
+  --r-md:    12px;
+  --r-lg:    16px;
+  --r-xl:    20px;
+
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+
+  /* Shadows */
+  --shadow-brand: 0 0 40px rgba(255,77,26,.18);
+  --shadow-card:  0 2px 16px rgba(0,0,0,.4);
+}
+
+html,body{height:100%;width:100%;overflow:hidden;
+  font-family:var(--font-body);background:var(--bg);color:var(--text-1);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+
+/* ══════════════════════════════════════════════════════
+   LAYOUT SHELL
+══════════════════════════════════════════════════════ */
+.app{height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── Top bar ── */
+.topbar{
+  height:var(--topbar);flex-shrink:0;
+  display:flex;align-items:center;gap:14px;
+  padding:0 20px;
+  background:var(--surface-1);
+  border-bottom:1px solid var(--border);
+  z-index:60;position:relative;
+}
+.topbar::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,77,26,.4),transparent);
+}
+
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.brand-mark{
+  width:32px;height:32px;border-radius:9px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--brand),var(--brand-2));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-size:15px;font-weight:800;color:#fff;
+  box-shadow:0 3px 12px rgba(255,77,26,.45);
+  position:relative;overflow:hidden;
+}
+.brand-mark::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.2),transparent);
+}
+.brand-name{
+  font-family:var(--font-display);font-size:17px;font-weight:800;letter-spacing:-.3px;
+  background:linear-gradient(90deg,var(--brand),var(--brand-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.brand-tag{
+  font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--brand);background:rgba(255,77,26,.1);border:1px solid rgba(255,77,26,.2);
+  border-radius:5px;padding:2px 7px;
+}
+
+.topbar-stats{display:flex;align-items:center;gap:6px;margin-left:12px;}
+.stat-chip{
+  display:none;align-items:center;gap:5px;
+  background:var(--surface-2);border:1px solid var(--border-hi);
+  border-radius:7px;padding:4px 9px;
+}
+.stat-chip.on{display:flex}
+.stat-k{font-size:10px;color:var(--text-3);font-weight:500;}
+.stat-v{font-size:10px;font-weight:700;color:var(--text-1);}
+.stat-v.live{
+  background:linear-gradient(90deg,var(--teal),#0EA5E9);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+.topbar-end{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.status-badge{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(0,201,167,.08);border:1px solid rgba(0,201,167,.2);
+  border-radius:20px;padding:5px 12px;
+  font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--teal);
+}
+.status-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--teal);
+  box-shadow:0 0 8px var(--teal);animation:pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.8)}}
+
+/* ── Workspace ── */
+.workspace{flex:1;min-height:0;display:flex;overflow:hidden;}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:var(--sidebar);flex-shrink:0;
+  display:flex;flex-direction:column;
+  background:var(--surface-1);
+  border-right:1px solid var(--border);
+  overflow:hidden;
+}
+
+.sidebar-scroll{
+  flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;
+}
+.sidebar-scroll::-webkit-scrollbar{width:3px}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:3px}
+
+.sidebar-section{padding:16px 14px 12px;flex-shrink:0;}
+.section-eyebrow{
+  font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--brand);margin-bottom:4px;
+}
+.section-heading{font-family:var(--font-display);font-size:15px;font-weight:800;color:var(--text-1);}
+
+.sidebar-divider{height:1px;background:var(--border);margin:0 14px;flex-shrink:0;}
+
+/* template list */
+.tmpl-list{display:flex;flex-direction:column;gap:4px;padding:10px 10px 6px;}
+.tmpl-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:var(--r-md);cursor:pointer;
+  border:1px solid transparent;
+  background:rgba(255,255,255,.02);
+  transition:background .15s,border-color .15s,transform .15s;
+  position:relative;
+}
+.tmpl-item:hover{background:rgba(255,255,255,.05);border-color:var(--border-hi);transform:translateX(2px);}
+.tmpl-item.active{
+  background:linear-gradient(135deg,rgba(255,77,26,.13),rgba(255,26,110,.07));
+  border-color:rgba(255,77,26,.4);
+}
+.tmpl-item.active .tmpl-label{
+  background:linear-gradient(90deg,var(--brand),var(--brand-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.tmpl-tick{
+  display:none;position:absolute;top:7px;right:7px;
+  width:16px;height:16px;border-radius:50%;
+  background:linear-gradient(135deg,var(--brand),var(--brand-2));
+  color:#fff;font-size:8px;font-weight:800;
+  align-items:center;justify-content:center;
+}
+.tmpl-item.active .tmpl-tick{display:flex}
+.tmpl-thumb{
+  width:32px;height:42px;border-radius:6px;object-fit:cover;flex-shrink:0;
+  border:1px solid var(--border-hi);background:var(--surface-3);
+}
+.tmpl-label{font-family:var(--font-display);font-size:11.5px;font-weight:700;color:var(--text-1);}
+.tmpl-slots{font-size:10px;color:var(--brand);font-weight:600;margin-top:2px;}
+
+/* upload zone */
+.upload-panel{flex-shrink:0;border-top:1px solid var(--border);}
+.upload-hint{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px 16px;gap:8px;text-align:center;color:var(--text-3);font-size:11px;
+}
+.upload-hint-icon{font-size:26px;opacity:.35}
+
+.tmpl-header{
+  display:flex;align-items:center;gap:9px;
+  margin:12px 12px 0;padding:8px 10px;
+  background:var(--surface-2);border:1px solid var(--border-hi);border-radius:var(--r-md);
+}
+.th-thumb{width:26px;height:34px;border-radius:5px;object-fit:cover;flex-shrink:0;border:1px solid var(--border-hi);}
+.th-name{font-family:var(--font-display);font-size:11px;font-weight:700;color:var(--text-1);}
+.th-slots{font-size:10px;color:var(--text-2);margin-top:1px;}
+
+.dropzone{
+  margin:10px 12px;
+  border:1.5px dashed rgba(255,255,255,.09);
+  border-radius:var(--r-lg);padding:14px 10px;
+  text-align:center;cursor:pointer;
+  background:rgba(255,255,255,.015);
+  transition:border-color .2s,background .2s;
+  position:relative;overflow:hidden;
+}
+.dropzone::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% -20%,rgba(255,77,26,.12),transparent 65%);
+  opacity:0;transition:opacity .25s;
+}
+.dropzone:hover,.dropzone.over{border-color:rgba(255,77,26,.5);}
+.dropzone:hover::before,.dropzone.over::before{opacity:1;}
+.dz-icon{font-size:20px;margin-bottom:5px;}
+.dz-title{font-size:11.5px;font-weight:600;color:var(--text-1);}
+.dz-sub{font-size:10px;color:var(--text-3);margin-top:3px;}
+
+/* progress */
+.progress-area{padding:4px 12px 8px;}
+.progress-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+.progress-lbl{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);}
+.progress-val{font-size:9.5px;font-weight:800;color:var(--brand);}
+.progress-track{height:2px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
+.progress-fill{
+  height:100%;border-radius:2px;
+  background:linear-gradient(90deg,var(--brand),var(--brand-2));
+  transition:width .4s cubic-bezier(.4,0,.2,1);
+}
+
+/* chips */
+.chips{max-height:136px;overflow-y:auto;padding:4px 12px 2px;}
+.chips::-webkit-scrollbar{width:3px}
+.chips::-webkit-scrollbar-thumb{background:rgba(255,255,255,.07);border-radius:3px}
+.chip{
+  display:flex;align-items:center;gap:7px;
+  background:var(--surface-2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:4px 7px;margin-bottom:3px;
+}
+.chip img{width:20px;height:20px;border-radius:4px;object-fit:cover;flex-shrink:0;}
+.chip-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:var(--text-2);}
+.chip-del{
+  width:15px;height:15px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(255,255,255,.06);color:var(--text-3);
+  font-size:8px;display:flex;align-items:center;justify-content:center;
+  transition:background .15s,color .15s;flex-shrink:0;
+}
+.chip-del:hover{background:var(--brand-2);color:#fff;}
+
+/* generate button */
+.btn-gen-wrap{padding:8px 12px 12px;}
+.btn-gen{
+  width:100%;padding:12px;border:none;border-radius:var(--r-lg);
+  font-family:var(--font-display);font-size:13px;font-weight:700;
+  cursor:pointer;color:#fff;letter-spacing:.02em;
+  background:linear-gradient(135deg,var(--brand) 0%,var(--brand-2) 55%,var(--accent) 100%);
+  background-size:200% 200%;
+  animation:grad-shift 5s ease infinite;
+  box-shadow:0 4px 22px rgba(255,77,26,.38);
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s,opacity .2s;
+  position:relative;overflow:hidden;
+}
+.btn-gen::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(255,255,255,.12),transparent);
+  pointer-events:none;
+}
+@keyframes grad-shift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.btn-gen:disabled{opacity:.22;cursor:not-allowed;animation:none;box-shadow:none;transform:none!important;}
+.btn-gen:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 30px rgba(255,77,26,.5);}
+
+/* ══════════════════════════════════════════════════════
+   MAIN CANVAS AREA
+══════════════════════════════════════════════════════ */
+.main{
+  flex:1;min-width:0;min-height:0;
+  display:flex;flex-direction:column;
+  background:var(--bg);position:relative;overflow:hidden;
+}
+
+/* animated background */
+.main-bg{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden;
+}
+.main-bg::before{
+  content:'';position:absolute;width:600px;height:600px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(108,63,219,.07) 0%,transparent 70%);
+  top:-100px;left:-100px;animation:bg-drift-1 18s ease-in-out infinite alternate;
+}
+.main-bg::after{
+  content:'';position:absolute;width:500px;height:500px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(255,26,110,.06) 0%,transparent 70%);
+  bottom:-80px;right:-80px;animation:bg-drift-2 14s ease-in-out infinite alternate;
+}
+@keyframes bg-drift-1{from{transform:translate(0,0)}to{transform:translate(60px,40px)}}
+@keyframes bg-drift-2{from{transform:translate(0,0)}to{transform:translate(-50px,-30px)}}
+
+/* canvas view */
+.canvas-view{
+  flex:1;min-height:0;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;position:relative;z-index:1;overflow:hidden;
+}
+
+/* empty state */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;gap:20px;
+  text-align:center;z-index:2;
+  animation:fade-up .6s ease both;
+}
+@keyframes fade-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.empty-mosaic{
+  display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);
+  gap:5px;width:132px;height:92px;border-radius:12px;overflow:hidden;opacity:.12;
+}
+.em-cell{border-radius:2px;}
+.em-cell:nth-child(1){background:var(--brand);}
+.em-cell:nth-child(2){background:var(--brand-2);grid-row:span 2;}
+.em-cell:nth-child(3){background:var(--accent);}
+.em-cell:nth-child(4){background:var(--teal);grid-column:span 2;}
+.empty-title{
+  font-family:var(--font-display);font-size:30px;font-weight:800;
+  color:var(--text-1);letter-spacing:-.6px;line-height:1.15;
+}
+.empty-title span{
+  background:linear-gradient(90deg,var(--brand),var(--brand-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.empty-sub{font-size:13px;color:var(--text-2);line-height:1.75;max-width:240px;}
+
+/* collage image */
+#collageImg{
+  display:block;max-width:100%;max-height:100%;
+  width:auto;height:auto;object-fit:contain;
+  border-radius:var(--r-md);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.06),
+    0 8px 32px rgba(0,0,0,.5),
+    0 32px 80px rgba(0,0,0,.5),
+    var(--shadow-brand);
+  user-select:none;-webkit-user-select:none;
+  transition:opacity .3s;z-index:1;position:relative;
+}
+
+/* slot layer */
+#slotLayer{position:absolute;pointer-events:none;z-index:2;}
+.slot-ov{
+  position:absolute;cursor:grab;
+  outline:2px solid transparent;outline-offset:-2px;
+  transition:outline-color .1s;pointer-events:all;border-radius:2px;
+}
+.slot-ov:hover{outline-color:rgba(255,255,255,.2);}
+.slot-ov.sel{outline:2px solid rgba(255,77,26,.9);z-index:5;}
+.slot-ov.swap-src{outline:2px solid var(--brand-2);z-index:5;}
+.slot-tag{
+  position:absolute;top:6px;right:6px;
+  background:rgba(255,77,26,.9);color:#fff;
+  font-size:9px;font-weight:700;padding:2px 7px;
+  border-radius:4px;opacity:0;transition:opacity .1s;pointer-events:none;
+  font-family:var(--font-display);letter-spacing:.04em;
+}
+.slot-ov.sel .slot-tag{opacity:1;}
+
+/* slot toolbar */
+#slotBar{
+  display:none;position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  background:rgba(7,7,14,.95);backdrop-filter:blur(24px);
+  border:1px solid var(--border-hi);border-radius:22px;
+  padding:6px 8px;gap:3px;z-index:30;align-items:center;
+  box-shadow:0 8px 40px rgba(0,0,0,.6);
+  animation:toolbar-in .2s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes toolbar-in{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+#slotBar.on{display:flex;}
+.tb{
+  display:flex;align-items:center;gap:4px;
+  background:rgba(255,255,255,.06);border:none;border-radius:10px;
+  padding:6px 11px;color:var(--text-2);
+  font-size:11px;font-weight:600;font-family:var(--font-body);
+  cursor:pointer;transition:background .12s,color .12s;white-space:nowrap;
+}
+.tb:hover{background:rgba(255,255,255,.13);color:var(--text-1);}
+.tb.active{background:rgba(255,77,26,.14);color:var(--brand);}
+.tb-div{width:1px;height:18px;background:var(--border);margin:0 2px;}
+
+/* swap banner */
+#swapBanner{
+  display:none;position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,var(--brand),var(--brand-2));
+  color:#fff;font-size:11px;font-weight:700;font-family:var(--font-display);
+  letter-spacing:.04em;padding:7px 20px;border-radius:22px;
+  z-index:30;white-space:nowrap;
+  box-shadow:0 4px 20px rgba(255,77,26,.5);
+  animation:fade-down .2s ease;
+}
+@keyframes fade-down{from{opacity:0;transform:translateX(-50%) translateY(-6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+.canvas-hint{
+  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  background:rgba(7,7,14,.75);backdrop-filter:blur(8px);
+  color:rgba(255,255,255,.3);font-size:10px;font-weight:500;
+  padding:5px 14px;border-radius:10px;white-space:nowrap;
+  pointer-events:none;z-index:6;border:1px solid var(--border);
+  letter-spacing:.04em;text-transform:uppercase;
+}
+
+/* ── Action bar ── */
+.action-bar{
+  height:var(--bar);flex-shrink:0;
+  display:none;align-items:center;gap:10px;
+  padding:0 22px;
+  background:rgba(7,7,14,.95);backdrop-filter:blur(14px);
+  border-top:1px solid var(--border);z-index:20;
+}
+.action-bar.on{display:flex;}
+
+.btn-save{
+  height:40px;padding:0 26px;border:none;border-radius:var(--r-md);
+  font-family:var(--font-display);font-size:12px;font-weight:700;letter-spacing:.03em;
+  cursor:pointer;color:var(--bg);
+  background:linear-gradient(135deg,var(--teal),#0EA5E9);
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s;
+  box-shadow:0 3px 18px rgba(0,201,167,.35);
+}
+.btn-save:hover{transform:translateY(-2px);box-shadow:0 7px 28px rgba(0,201,167,.5);}
+
+.btn-secondary{
+  height:40px;padding:0 14px;
+  background:var(--surface-2);border:1px solid var(--border-hi);border-radius:var(--r-md);
+  font-family:var(--font-body);font-size:11.5px;font-weight:600;
+  cursor:pointer;color:var(--text-2);
+  display:flex;align-items:center;gap:6px;
+  transition:background .15s,color .15s;
+}
+.btn-secondary:hover{background:var(--surface-3);color:var(--text-1);}
+.btn-secondary.danger:hover{
+  background:rgba(255,26,110,.1);color:var(--brand-2);
+  border-color:rgba(255,26,110,.22);
+}
+
+/* ── Processing overlay ── */
+#overlay{
+  display:none;position:absolute;inset:0;
+  background:rgba(7,7,14,.92);backdrop-filter:blur(16px);
+  align-items:center;justify-content:center;
+  flex-direction:column;gap:20px;z-index:50;
+}
+#overlay.on{display:flex;}
+
+.loader-ring{
+  width:56px;height:56px;position:relative;
+}
+.loader-ring::before{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  border:3px solid rgba(255,255,255,.06);
+}
+.loader-ring::after{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  border:3px solid transparent;
+  border-top-color:var(--brand);
+  border-right-color:var(--brand-2);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.loader-dots{display:flex;gap:6px;margin-top:-4px;}
+.loader-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--brand);opacity:.3;
+  animation:dot-pulse 1.4s ease-in-out infinite;
+}
+.loader-dot:nth-child(2){animation-delay:.2s;}
+.loader-dot:nth-child(3){animation-delay:.4s;}
+@keyframes dot-pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+
+.loader-title{
+  font-family:var(--font-display);font-size:19px;font-weight:800;letter-spacing:-.3px;
+  background:linear-gradient(90deg,var(--brand),var(--brand-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.loader-sub{font-size:12px;color:var(--text-2);letter-spacing:.02em;}
+
+/* ── Toast ── */
+#toast{
+  position:fixed;bottom:80px;left:50%;
+  transform:translateX(-50%) translateY(16px);opacity:0;
+  background:rgba(7,7,14,.97);backdrop-filter:blur(20px);
+  color:var(--text-1);padding:9px 18px;border-radius:22px;
+  font-size:11.5px;font-weight:600;font-family:var(--font-body);
+  display:flex;align-items:center;gap:7px;z-index:999;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .25s;
+  pointer-events:none;white-space:nowrap;
+  border:1px solid var(--border-hi);
+  box-shadow:0 8px 36px rgba(0,0,0,.7);
+}
+#toast.on{transform:translateX(-50%) translateY(0);opacity:1;}
+
+/* ── Scrollbar global ── */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.07);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Top bar ─────────────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <a class="brand" href="#">
+      <div class="brand-mark">J</div>
+      <span class="brand-name">JIOPICS</span>
+    </a>
+    <span class="brand-tag">AI Studio</span>
+
+    <div class="topbar-stats">
+      <div class="stat-chip" id="spTemplate">
+        <span class="stat-k">Template</span>
+        <span class="stat-v" id="rvTemplate">—</span>
+      </div>
+      <div class="stat-chip" id="spPhotos">
+        <span class="stat-k">Photos</span>
+        <span class="stat-v" id="rvPhotos">—</span>
+      </div>
+      <div class="stat-chip" id="spTime">
+        <span class="stat-k">AI Time</span>
+        <span class="stat-v live" id="rvTime">—</span>
+      </div>
+      <div class="stat-chip" id="spCanvas">
+        <span class="stat-k">Canvas</span>
+        <span class="stat-v" id="rvCanvas">—</span>
+      </div>
+    </div>
+
+    <div class="topbar-end">
+      <div class="status-badge">
+        <div class="status-dot"></div>AI Ready
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Workspace ───────────────────────────────────────────────────────── -->
+  <div class="workspace">
+
+    <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+
+        <!-- Header -->
+        <div class="sidebar-section">
+          <div class="section-eyebrow">JIOPICS Studio</div>
+          <div class="section-heading">Create Collage</div>
+        </div>
+
+        <!-- Step 1 — Template -->
+        <div class="sidebar-section" style="padding-bottom:6px;">
+          <div class="section-eyebrow">Step 1 — Layout</div>
+        </div>
+        <div class="tmpl-list" id="tmplList"></div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- Step 2 — Photos -->
+        <div class="upload-panel">
+
+          <div class="sidebar-section" style="padding-bottom:8px;">
+            <div class="section-eyebrow">Step 2</div>
+            <div class="section-heading" id="uploadHeading">Add Photos</div>
+          </div>
+
+          <!-- No template selected -->
+          <div class="upload-hint" id="uploadHint">
+            <div class="upload-hint-icon">☝️</div>
+            <div>Select a layout above first</div>
+          </div>
+
+          <!-- Template selected — show upload UI -->
+          <div id="uploadUI" style="display:none;flex-direction:column;">
+            <div class="tmpl-header">
+              <img class="th-thumb" id="thThumb" src="" alt=""/>
+              <div>
+                <div class="th-name" id="thName">—</div>
+                <div class="th-slots" id="thSlots">—</div>
+              </div>
+            </div>
+
+            <div class="dropzone" id="dropzone">
+              <div class="dz-icon">🖼️</div>
+              <div class="dz-title">Drop photos here</div>
+              <div class="dz-sub">or tap to browse · JPG PNG WEBP</div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" multiple style="display:none"/>
+
+            <div class="progress-area">
+              <div class="progress-row">
+                <span class="progress-lbl">Uploaded</span>
+                <span class="progress-val" id="progVal">0 / 0</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" id="progFill" style="width:0%"></div>
+              </div>
+            </div>
+
+            <div class="chips" id="chips"></div>
+
+            <div class="btn-gen-wrap">
+              <button class="btn-gen" id="btnGen" disabled onclick="generate()">
+                ✦ Generate Collage
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /sidebar-scroll -->
+    </aside>
+
+    <!-- ── Main canvas area ──────────────────────────────────────────── -->
+    <main class="main">
+      <div class="main-bg"></div>
+
+      <div class="canvas-view" id="canvasView">
+
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-mosaic">
+            <div class="em-cell"></div>
+            <div class="em-cell"></div>
+            <div class="em-cell"></div>
+            <div class="em-cell"></div>
+          </div>
+          <div class="empty-title">Your Collage<br><span>Awaits ✦</span></div>
+          <div class="empty-sub">Pick a layout, add your photos,<br>and let AI build something beautiful.</div>
+        </div>
+
+        <!-- Collage output -->
+        <img id="collageImg" src="" alt="Collage" draggable="false" style="display:none"/>
+        <div id="slotLayer"></div>
+
+        <!-- Slot toolbar -->
+        <div id="slotBar">
+          <button class="tb" onclick="zoomSel(.15)">＋ Zoom</button>
+          <button class="tb" onclick="zoomSel(-.15)">－ Zoom</button>
+          <div class="tb-div"></div>
+          <button class="tb" id="tbSwap" onclick="toggleSwap()">⇄ Swap</button>
+          <button class="tb" onclick="resetSel()">↺ Reset</button>
+          <div class="tb-div"></div>
+          <button class="tb" onclick="deselect()" style="color:var(--brand-2)">✕</button>
+        </div>
+
+        <div id="swapBanner">✦ Tap another slot to swap</div>
+        <div class="canvas-hint" id="canvasHint" style="display:none">Tap to select · Drag to pan · Scroll to zoom</div>
+
+      </div><!-- /canvas-view -->
+
+      <!-- Action bar -->
+      <div class="action-bar" id="actionBar">
+        <button class="btn-save" onclick="download()">↓ Save Collage</button>
+        <button class="btn-secondary" onclick="changePhotos()">📷 Change Photos</button>
+        <button class="btn-secondary danger" onclick="startOver()" style="margin-left:auto">✕ Start Over</button>
+      </div>
+
+      <!-- Processing overlay -->
+      <div id="overlay">
+        <div class="loader-ring"></div>
+        <div class="loader-dots">
+          <div class="loader-dot"></div>
+          <div class="loader-dot"></div>
+          <div class="loader-dot"></div>
+        </div>
+        <div class="loader-title">Crafting your collage…</div>
+        <div class="loader-sub" id="overlayMsg">Analysing photos…</div>
+      </div>
+
+    </main><!-- /main -->
+
+  </div><!-- /workspace -->
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+const S = {
+  template:   null,
+  meta:       {},
+  photos:     [],
+  slotsDef:   [],
+  adj:        [],
+  sel:        -1,
+  swapMode:   false,
+  swapFrom:   -1,
+  assignment: null,
+  circleSlot: -1,
+  collageB64: null,
+  hasEdits:   false,
+  rois:       null,
+};
+
+const $  = id => document.getElementById(id);
+const cl = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+/* ══════════════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    S.meta = await fetch('/api/templates').then(r => r.json());
+  } catch(e) {
+    console.error('[Boot] Template fetch failed:', e);
+  }
+  renderTemplates();
+});
+
+/* ══════════════════════════════════════════════════════
+   TEMPLATES
+══════════════════════════════════════════════════════ */
+function renderTemplates() {
+  const list = $('tmplList');
+  list.innerHTML = '';
+  Object.entries(S.meta).forEach(([key, m]) => {
+    const el = document.createElement('div');
+    el.className = 'tmpl-item';
+    el.innerHTML = `
+      <img class="tmpl-thumb"
+        src="/assets/collage_templates/${m.preview_img}"
+        loading="lazy" onerror="this.style.background='var(--surface-3)'"/>
+      <div style="min-width:0">
+        <div class="tmpl-label">${m.name}</div>
+        <div class="tmpl-slots">📷 ${m.slots} photos</div>
+      </div>
+      <div class="tmpl-tick">✓</div>`;
+    el.onclick = () => pickTemplate(key, el);
+    list.appendChild(el);
+  });
+}
+
+function pickTemplate(key, el) {
+  document.querySelectorAll('.tmpl-item').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  S.template   = key;
+  S.circleSlot = S.meta[key].circle_slot ?? -1;
+  S.photos     = new Array(S.meta[key].slots).fill(null);
+
+  $('uploadHint').style.display = 'none';
+  $('uploadUI').style.display   = 'flex';
+  $('thThumb').src  = `/assets/collage_templates/${S.meta[key].preview_img}`;
+  $('thName').textContent  = S.meta[key].name;
+  $('thSlots').textContent = `${S.meta[key].slots} photos needed`;
+  refreshUpload();
+  toast(`🎨 ${S.meta[key].name} selected`);
+}
+
+/* ══════════════════════════════════════════════════════
+   UPLOAD
+══════════════════════════════════════════════════════ */
+const need   = () => S.meta[S.template]?.slots ?? 0;
+const filled = () => S.photos.filter(Boolean).length;
+
+function refreshUpload() {
+  const n = need(), f = filled();
+  $('progFill').style.width  = n ? `${f/n*100}%` : '0%';
+  $('progVal').textContent   = `${f} / ${n}`;
+  $('btnGen').disabled       = f < n;
+  renderChips();
+}
+
+function renderChips() {
+  const w = $('chips');
+  w.innerHTML = '';
+  S.photos.forEach((p, i) => {
+    if (!p) return;
+    const d = document.createElement('div');
+    d.className = 'chip';
+    d.innerHTML = `<img src="${p.b64}"/>
+      <span class="chip-name">${p.name}</span>
+      <button class="chip-del" onclick="rmPhoto(${i})">✕</button>`;
+    w.appendChild(d);
+  });
+}
+
+function rmPhoto(i) { S.photos[i] = null; refreshUpload(); }
+
+/* ── Dropzone ── */
+(() => {
+  const dz  = $('dropzone');
+  const inp = $('fileInput');
+  dz.onclick     = () => { if (!S.template) { toast('☝️ Pick a layout first'); return; } inp.click(); };
+  dz.ondragover  = e  => { e.preventDefault(); dz.classList.add('over'); };
+  dz.ondragleave = () => dz.classList.remove('over');
+  dz.ondrop = e  => {
+    e.preventDefault(); dz.classList.remove('over');
+    if (!S.template) { toast('☝️ Pick a layout first'); return; }
+    addFiles(Array.from(e.dataTransfer.files));
+  };
+  inp.onchange = function() { addFiles(Array.from(this.files)); this.value = ''; };
+})();
+
+/* ── Image compression (browser-side, max 1200px JPEG 0.82) ── */
+function compressImage(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onerror = () => resolve(null);
+    reader.onload  = () => {
+      const img = new Image();
+      img.onerror = () => resolve(reader.result);
+      img.onload  = () => {
+        const MAX    = 1200;
+        const scale  = Math.min(1, MAX / Math.max(img.width, img.height));
+        const c      = document.createElement('canvas');
+        c.width  = Math.round(img.width  * scale);
+        c.height = Math.round(img.height * scale);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ── addFiles: compress only, no saliency pre-fetch ── */
+async function addFiles(files) {
+  for (const f of files) {
+    const i = S.photos.findIndex((p, j) => j < need() && !p);
+    if (i === -1) break;
+    const b64 = await compressImage(f);
+    if (!b64) continue;
+    S.photos[i] = { name: f.name, b64, cx: 0.5, cy: 0.45 };
+    refreshUpload();
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   GENERATE
+══════════════════════════════════════════════════════ */
+async function generate() {
+  $('emptyState').style.display  = 'none';
+  $('collageImg').style.display  = 'none';
+  $('actionBar').classList.remove('on');
+  $('canvasHint').style.display  = 'none';
+  hideStats();
+  $('overlay').classList.add('on');
+  clearSlots();
+
+  /* Rotating status messages */
+  const msgs = [
+    'Analysing photos…',
+    'Running face detection…',
+    'Computing saliency maps…',
+    'Scoring photo quality…',
+    'Assigning photos to slots…',
+    'Applying smart crop + rule-of-thirds…',
+    'Rendering collage…',
+    'Almost ready…',
+  ];
+  let mi = 0;
+  const ticker = setInterval(() => {
+    const el = $('overlayMsg');
+    if (el) el.textContent = msgs[Math.min(mi++, msgs.length - 1)];
+  }, 2000);
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        template: S.template,
+        images:   S.photos.filter(Boolean).slice(0, need()).map(p => p.b64),
+        quality:  95,
+      }),
+    });
+    const data = await resp.json();
+    clearInterval(ticker);
+
+    if (!resp.ok) {
+      toast(`❌ ${data.error}`);
+      $('overlay').classList.remove('on');
+      return;
+    }
+
+    /* Store results */
+    S.collageB64 = data.collage;
+    S.hasEdits   = false;
+    S.rois       = data.rois;
+    S.adj        = data.rois.map(() => ({ zoom: 1, panX: 0, panY: 0 }));
+    S.sel        = -1; S.swapMode = false; S.swapFrom = -1;
+    S.assignment = data.assignment || data.rois.map((_, i) => i);
+
+    /* Update stat chips */
+    $('rvTemplate').textContent = data.template;
+    $('rvPhotos').textContent   = `${data.slots}`;
+    $('rvTime').textContent     = `${data.time_s}s`;
+    $('rvCanvas').textContent   = data.canvas;
+    showStats();
+
+    /* Fetch slot definitions */
+    const sd   = await fetch(`/api/slot_defs/${S.template}`);
+    S.slotsDef = await sd.json();
+
+    /* Show image */
+    const img = $('collageImg');
+    img.onload = () => {
+      $('overlay').classList.remove('on');
+      img.style.display = 'block';
+      $('actionBar').classList.add('on');
+      $('canvasHint').style.display = 'block';
+      buildSlots();
+      toast('🎉 Collage ready!');
+    };
+    img.src = S.collageB64;
+
+  } catch(e) {
+    clearInterval(ticker);
+    $('overlay').classList.remove('on');
+    toast(`❌ ${e.message}`);
+    console.error(e);
+  }
+}
+
+/* ── Stats visibility ── */
+const STAT_IDS = ['spTemplate','spPhotos','spTime','spCanvas'];
+function showStats() { STAT_IDS.forEach(id => $(id).classList.add('on')); }
+function hideStats() { STAT_IDS.forEach(id => $(id).classList.remove('on')); }
+
+/* ══════════════════════════════════════════════════════
+   SLOT OVERLAYS
+══════════════════════════════════════════════════════ */
+function clearSlots() {
+  $('slotLayer').innerHTML = '';
+  $('slotLayer').style.cssText = 'position:absolute;pointer-events:none;';
+  $('slotBar').classList.remove('on');
+  $('swapBanner').style.display = 'none';
+  S.sel = -1;
+}
+
+function buildSlots() {
+  clearSlots();
+  const img   = $('collageImg');
+  const view  = $('canvasView');
+  const ir    = img.getBoundingClientRect();
+  const vr    = view.getBoundingClientRect();
+  const layer = $('slotLayer');
+  layer.style.cssText = `position:absolute;
+    left:${ir.left-vr.left}px;top:${ir.top-vr.top}px;
+    width:${ir.width}px;height:${ir.height}px;pointer-events:none;`;
+
+  S.slotsDef.forEach((slot, i) => {
+    const {xf,yf,wf,hf} = slot;
+    const div = document.createElement('div');
+    div.className     = 'slot-ov';
+    div.dataset.i     = i;
+    div.style.cssText = `left:${xf*100}%;top:${yf*100}%;width:${wf*100}%;height:${hf*100}%;`;
+    const tag = document.createElement('div');
+    tag.className   = 'slot-tag';
+    tag.textContent = `Slot ${i+1}`;
+    div.appendChild(tag);
+    wireSlot(div, i);
+    layer.appendChild(div);
+  });
+}
+
+window.addEventListener('resize', () => {
+  if ($('collageImg').style.display !== 'none') buildSlots();
+});
+
+/* ── Debounced regen ── */
+let _rt = null;
+function scheduleRegen() {
+  clearTimeout(_rt);
+  $('collageImg').style.opacity = '0.45';
+  _rt = setTimeout(regenAdjusted, 480);
+}
+
+async function regenAdjusted() {
+  try {
+    const resp = await fetch('/api/generate_adjusted', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        template:    S.template,
+        images:      S.photos.filter(Boolean).slice(0, need()).map(p => p.b64),
+        quality:     95,
+        adjustments: S.adj.map(a => ({
+          zoom: Math.round(a.zoom  * 100),
+          panX: Math.round(a.panX  * 100),
+          panY: Math.round(a.panY  * 100),
+        })),
+        assignment: S.assignment || null,
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error);
+    S.collageB64 = data.collage;
+    const img    = $('collageImg');
+    img.onload   = () => { img.style.opacity = '1'; };
+    img.src      = data.collage;
+  } catch(e) {
+    $('collageImg').style.opacity = '1';
+    console.error('[RegenAdjusted]', e);
+  }
+}
+
+/* ── Slot interaction wiring ── */
+function wireSlot(div, idx) {
+  let sX, sY, sAdj, moved, t0;
+
+  div.addEventListener('pointerdown', e => {
+    e.preventDefault(); div.setPointerCapture(e.pointerId);
+    sX = e.clientX; sY = e.clientY;
+    sAdj = { ...S.adj[idx] }; moved = false; t0 = Date.now();
+  });
+  div.addEventListener('pointermove', e => {
+    if (!sAdj) return;
+    const dx = e.clientX - sX, dy = e.clientY - sY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+    if (!moved) return;
+    const r  = div.getBoundingClientRect();
+    const mp = 0.3 + (S.adj[idx].zoom - 1) * 0.5;
+    S.adj[idx].panX = cl(sAdj.panX + dx / (r.width  || 1), -mp, mp);
+    S.adj[idx].panY = cl(sAdj.panY + dy / (r.height || 1), -mp, mp);
+    scheduleRegen(); S.hasEdits = true;
+  });
+  div.addEventListener('pointerup', () => {
+    if (!moved && Date.now() - t0 < 300) handleTap(idx);
+    sAdj = undefined;
+  });
+  div.addEventListener('wheel', e => {
+    e.preventDefault();
+    if (S.sel !== idx) select(idx);
+    zoomSlot(idx, e.deltaY < 0 ? .12 : -.12);
+    S.hasEdits = true;
+  }, { passive: false });
+
+  /* Pinch-to-zoom (touch) */
+  let ld = null;
+  div.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      if (S.sel !== idx) select(idx);
+      ld = Math.hypot(e.touches[1].clientX-e.touches[0].clientX,
+                      e.touches[1].clientY-e.touches[0].clientY);
+    }
+  }, { passive: false });
+  div.addEventListener('touchmove', e => {
+    if (e.touches.length === 2 && ld) {
+      e.preventDefault();
+      const d = Math.hypot(e.touches[1].clientX-e.touches[0].clientX,
+                           e.touches[1].clientY-e.touches[0].clientY);
+      S.adj[idx].zoom = cl(S.adj[idx].zoom * (d/ld), 1.0, 4.0);
+      const mp = 0.3 + (S.adj[idx].zoom - 1) * 0.5;
+      S.adj[idx].panX = cl(S.adj[idx].panX, -mp, mp);
+      S.adj[idx].panY = cl(S.adj[idx].panY, -mp, mp);
+      scheduleRegen(); ld = d; S.hasEdits = true;
+    }
+  }, { passive: false });
+  div.addEventListener('touchend', () => { ld = null; });
+}
+
+function handleTap(idx) {
+  if (S.swapMode) {
+    if (S.swapFrom !== idx) doSwap(S.swapFrom, idx);
+    exitSwap(); return;
+  }
+  S.sel === idx ? deselect() : select(idx);
+}
+function select(idx) {
+  S.sel = idx;
+  document.querySelectorAll('.slot-ov').forEach(d => d.classList.remove('sel'));
+  document.querySelector(`.slot-ov[data-i="${idx}"]`)?.classList.add('sel');
+  $('slotBar').classList.add('on');
+  $('canvasHint').style.display = 'none';
+}
+function deselect() {
+  S.sel = -1;
+  document.querySelectorAll('.slot-ov').forEach(d => d.classList.remove('sel'));
+  $('slotBar').classList.remove('on');
+  $('canvasHint').style.display = 'block';
+  exitSwap();
+}
+function zoomSlot(idx, delta) {
+  S.adj[idx].zoom = cl(S.adj[idx].zoom + delta, 1.0, 4.0);
+  const mp = 0.3 + (S.adj[idx].zoom - 1) * 0.5;
+  S.adj[idx].panX = cl(S.adj[idx].panX, -mp, mp);
+  S.adj[idx].panY = cl(S.adj[idx].panY, -mp, mp);
+  scheduleRegen();
+}
+function zoomSel(d) { if (S.sel >= 0) { zoomSlot(S.sel, d); S.hasEdits = true; } }
+function resetSel() {
+  if (S.sel >= 0) {
+    S.adj[S.sel] = { zoom: 1, panX: 0, panY: 0 };
+    S.hasEdits = true; scheduleRegen(); toast('↺ Reset slot');
+  }
+}
+function toggleSwap() {
+  if (S.sel < 0) return;
+  if (S.swapMode) { exitSwap(); return; }
+  S.swapMode = true; S.swapFrom = S.sel;
+  document.querySelectorAll('.slot-ov').forEach(d => d.classList.remove('sel'));
+  document.querySelector(`.slot-ov[data-i="${S.sel}"]`)?.classList.add('swap-src');
+  $('tbSwap').classList.add('active');
+  $('swapBanner').style.display = 'block';
+  $('slotBar').classList.remove('on');
+  toast('⇄ Tap another slot to swap');
+}
+function exitSwap() {
+  S.swapMode = false; S.swapFrom = -1;
+  document.querySelectorAll('.slot-ov').forEach(d => d.classList.remove('swap-src'));
+  $('tbSwap').classList.remove('active');
+  $('swapBanner').style.display = 'none';
+  if (S.sel >= 0) $('slotBar').classList.add('on');
+}
+function doSwap(a, b) {
+  if (S.assignment) [S.assignment[a], S.assignment[b]] = [S.assignment[b], S.assignment[a]];
+  [S.adj[a], S.adj[b]] = [S.adj[b], S.adj[a]];
+  if (S.rois) [S.rois[a], S.rois[b]] = [S.rois[b], S.rois[a]];
+  S.hasEdits = true; scheduleRegen(); toast(`⇄ Slot ${a+1} ↔ Slot ${b+1}`);
+}
+
+/* ══════════════════════════════════════════════════════
+   ACTIONS
+══════════════════════════════════════════════════════ */
+async function download() {
+  if (!S.collageB64) return;
+  if (_rt) { clearTimeout(_rt); await regenAdjusted(); }
+  const a    = document.createElement('a');
+  a.href     = S.collageB64;
+  a.download = `jiopics_${S.template}_${Date.now()}.jpg`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  toast('⬇️ Saved!');
+}
+
+function changePhotos() {
+  S.photos = new Array(need()).fill(null); refreshUpload();
+  $('collageImg').style.display  = 'none';
+  $('emptyState').style.display  = 'flex';
+  $('actionBar').classList.remove('on');
+  $('canvasHint').style.display  = 'none';
+  hideStats(); clearSlots();
+}
+
+function startOver() {
+  S.template = null; S.photos = []; S.collageB64 = null; S.hasEdits = false;
+  document.querySelectorAll('.tmpl-item').forEach(c => c.classList.remove('active'));
+  $('uploadHint').style.display = 'flex';
+  $('uploadUI').style.display   = 'none';
+  $('collageImg').style.display = 'none';
+  $('emptyState').style.display = 'flex';
+  $('actionBar').classList.remove('on');
+  $('canvasHint').style.display = 'none';
+  hideStats(); clearSlots();
+}
+
+/* ══════════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════════ */
+let _tt;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(_tt);
+  _tt = setTimeout(() => t.classList.remove('on'), 2800);
+}
+</script>
+</body>
+</html>
